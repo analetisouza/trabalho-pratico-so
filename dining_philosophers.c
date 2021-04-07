@@ -89,14 +89,9 @@ void* philosopher_actions(void* n){
 
         hungry(i);
         take_chops(i);
-
-        if (local_eating > 0)
-            eat(i, &local_eating);
-
+        eat(i, &local_eating);
         put_chops(i);
-
-        if (local_thinking > 0)
-            think(i, &local_thinking);
+        think(i, &local_thinking);
     }
     pthread_exit(NULL);
 }
@@ -118,7 +113,6 @@ int main (void){
         pthread_create(&philosopher[i], NULL, philosopher_actions, (void*)i);
         state[i] = THINKING;
     }
-
     // joining philosophers threads
     for(int i = 0; i < 5; i++)
         pthread_join(philosopher[i], NULL);
