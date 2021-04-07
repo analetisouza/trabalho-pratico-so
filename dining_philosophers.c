@@ -29,53 +29,79 @@ int total_thinking;
 
 void hungry(int n){
     state[n] = HUNGRY;
+    printf("Philosopher %d is hungry\n", n);
 }
 
 void take_chops(int n){
-    sem_wait(&mutex);
-
     if (state[n] == HUNGRY && state[LEFT_PHILOSOPHER] != EATING && state[RIGHT_PHILOSOPHER] != EATING){
-        sem_wait(&chopstick[LEFT_CHOPSTICK]);
-        sleep(1);
-        sem_wait(&chopstick[RIGHT_CHOPSTICK]);
+        if (LEFT_CHOPSTICK < RIGHT_CHOPSTICK){
+            sem_wait(&chopstick[LEFT_CHOPSTICK]);
+            printf("Philosopher %d took left chopstick\n", n);
+            sleep(1);
+            sem_wait(&chopstick[RIGHT_CHOPSTICK]);
+            printf("Philosopher %d took right chopstick\n", n);
+        }
+        else {
+            sem_wait(&mutex);
+            sem_wait(&chopstick[LEFT_CHOPSTICK]);
+            printf("Philosopher %d took left chopstick\n", n);
+            sleep(1);
+            sem_wait(&chopstick[RIGHT_CHOPSTICK]);
+            printf("Philosopher %d took right chopstick\n", n);
+        }
     }
-        return;
 } //add busy chopsticks mechanism
 
 void eat(int n, int* eating){
-    state[n] = EATING;
-    sleep(1);
-    *eating = *eating - 1;
+    int check_eating = *eating;
+    if (check_eating > 0){
+        state[n] = EATING;
+        printf("Philosopher %d is eating\n", n);
+        sleep(1);
+        *eating = *eating - 1;
+        printf("Philosopher %d remaining eating time: %d\n", n, check_eating);
+    }
 }
 
-void put_chops(){
+void put_chops(int n){
     sem_post(&chopstick[RIGHT_CHOPSTICK]);
     sem_post(&chopstick[LEFT_CHOPSTICK]);
     sem_post(&mutex); //not sure if this should be here
 }
 
 void think(int n, int* thinking){
-    state[n] = THINKING;
-    sleep(1);
-    *thinking = *thinking + 1; 
+    int check_thinking = *thinking;
+    if (check_thinking > 0){
+        state[n] = THINKING;
+        printf("Philosopher %d is thinking\n", n);
+        sleep(1);
+        *thinking = *thinking - 1;
+        printf("Philosopher %d remaining thinking time: %d\n", n, check_thinking);
+    } 
 }
 
 void* philosopher_actions(void* n){
     int local_eating = total_eating;
     int local_thinking = total_thinking;
 
-    while(local_eating > 0 && local_thinking > 0){
+    while(local_eating > 0 || local_thinking > 0){
         int* i = n;
 
-        hungry();
+        hungry(i);
         take_chops(i);
-        eat(i, &local_eating);
-        put_chops();
-        think(i, &local_thinking);
+
+        if (local_eating > 0)
+            eat(i, &local_eating);
+
+        put_chops(i);
+
+        if (local_thinking > 0)
+            think(i, &local_thinking);
     }
+    pthread_exit(NULL);
 }
 
-int main (void) {
+int main (void){
     pthread_t philosopher[5];
 
     printf("Type the amount of time each philosopher will spend eating: ");
