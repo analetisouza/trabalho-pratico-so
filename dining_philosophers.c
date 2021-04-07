@@ -48,9 +48,17 @@ void eat(int n, int* eating){
     *eating = *eating - 1;
 }
 
-void put_chops(){}
+void put_chops(){
+    sem_post(&chopstick[RIGHT_CHOPSTICK]);
+    sem_post(&chopstick[LEFT_CHOPSTICK]);
+    sem_post(&mutex); //not sure if this should be here
+}
 
-void think(){}
+void think(int n, int* thinking){
+    state[n] = THINKING;
+    sleep(1);
+    *thinking = *thinking + 1; 
+}
 
 void* philosopher_actions(void* n){
     int local_eating = total_eating;
@@ -63,7 +71,7 @@ void* philosopher_actions(void* n){
         take_chops(i);
         eat(i, &local_eating);
         put_chops();
-        think();
+        think(i, &local_thinking);
     }
 }
 
