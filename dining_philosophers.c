@@ -59,7 +59,7 @@ void eat(int n, int* eating){
         printf("Philosopher %d is eating\n", n);
         sleep(1);
         *eating = *eating - 1;
-        printf("Philosopher %d remaining eating time: %d\n", n, check_eating);
+        printf("Philosopher %d remaining eating time: %d\n", n, check_eating - 1);
     }
 }
 
@@ -76,7 +76,7 @@ void think(int n, int* thinking){
         printf("Philosopher %d is thinking\n", n);
         sleep(1);
         *thinking = *thinking - 1;
-        printf("Philosopher %d remaining thinking time: %d\n", n, check_thinking);
+        printf("Philosopher %d remaining thinking time: %d\n", n, check_thinking - 1);
     } 
 }
 
