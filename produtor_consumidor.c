@@ -26,7 +26,7 @@ sem_t empty; //semáforo contador que indica quantos espaços do buffer estão v
 int tam_buffer; //tamanho do buffer
 int itens_prod; //quantidade de itens produzidos pelo produtor de uma única vez
 int itens_cons; //quantidade de itens consumidos pelo consumidor de uma única vez
-int ind_prod = 0, ind_cons = 0, qntd_itens = 0; //indices de onde vão realizar a produção e a consumação e o contador de itens no buffer
+int in = 0, out = 0, qntd_itens = 0; //indices de onde vão realizar a produção e a consumação e o contador de itens no buffer
 
 //região crítica (recursos compartilhados entre as threads do produtor e consumidor)
 int* buffer; //vetor do buffer
@@ -63,14 +63,17 @@ void* produz(void* n)
 
 	while(1){
 		for(i = 0; i < itens_prod; i++) {
+			//produz o item com id entre 1 a 99 
+			int item = (rand()%99 + 1);
+
 			//vai produzir quando empty e mutex > 0:
 			sem_wait(&empty); //decrementa em 1 o semáforo de posições vazias do buffer
 			sem_wait(&mutex); //a thread do produtor está dentro da região crítica, mutex = 0
 
-			//produz o item com id entre 1 a 99 e o coloca dentro do buffer
-			buffer[ind_prod] = (rand()%99 + 1);
-			printf("\n\t\t* %dº PRODUÇÃO DO ID %d!\n", i+1, buffer[ind_prod]);
-			ind_prod = (ind_prod + 1) % tam_buffer;
+			//coloca o item produzido dentro do buffer e incrementa os contadores
+			buffer[in] = item;
+			printf("\n\t\t* %dº PRODUÇÃO DO ID %d!\n", i+1, buffer[in]);
+			in = (in + 1) % tam_buffer;
 			qntd_itens++;
 
 			imprime_buffer();
@@ -94,11 +97,11 @@ void* consome(void* n)
 			sem_wait(&full); //decrementa em 1 o semáforo de posições ocupadas do buffer
 			sem_wait(&mutex); //a thread do consumidor está dentro da região crítica, mutex = 0
 
-			//consome o item do mais antigo para o mais recente, considerando o vetor circular
-			//int item = buffer[ind_cons];
-			printf("\n\t\t* %dº CONSUMO DO ID %d!\n", i+1, buffer[ind_cons]);
-			buffer[ind_cons] = 0;
-			ind_cons = (ind_cons + 1) % tam_buffer;
+			//consome o item do mais antigo para o mais recente e incrementa os contadores
+			//int item = buffer[out];
+			printf("\n\t\t* %dº CONSUMO DO ID %d!\n", i+1, buffer[out]);
+			buffer[out] = 0;
+			out = (out + 1) % tam_buffer;
 			qntd_itens--;
 
 			imprime_buffer();
@@ -119,7 +122,7 @@ void imprime_buffer(void)
 
 	printf("\n\tBuffer: ");
 	for(i = 0; i < qntd_itens; i++) {
-		printf("%d   ", buffer[(ind_cons + i) % tam_buffer]);
+		printf("%d   ", buffer[(out + i) % tam_buffer]);
 	}
 	printf("\n");
 }
