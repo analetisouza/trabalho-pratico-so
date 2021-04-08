@@ -54,18 +54,18 @@ void take_chops(int n){
     if (state[n] == HUNGRY && state[LEFT_PHILOSOPHER] != EATING && state[RIGHT_PHILOSOPHER] != EATING){
         if (LEFT_CHOPSTICK < RIGHT_CHOPSTICK){
             sem_wait(&chopstick[LEFT_CHOPSTICK]);
-            printf("Philosopher %d took left chopstick\n", n);
+            printf("Philosopher %d took left chopstick (Nº %d)\n", n, LEFT_CHOPSTICK);
             sleep(1);
             sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-            printf("Philosopher %d took right chopstick\n", n);
+            printf("Philosopher %d took right chopstick (Nº %d)\n", n, RIGHT_CHOPSTICK);
         }
         else {
             sem_wait(&mutex);
                 sem_wait(&chopstick[LEFT_CHOPSTICK]);
-                printf("Philosopher %d took left chopstick\n", n);
+                printf("Philosopher %d took left chopstick (Nº %d)\n", n, LEFT_CHOPSTICK);
                 sleep(1);
                 sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-                printf("Philosopher %d took right chopstick\n", n);
+                printf("Philosopher %d took right chopstick (Nº %d)\n", n, RIGHT_CHOPSTICK);
         }
     }
 }
