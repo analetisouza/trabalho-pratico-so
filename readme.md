@@ -1,3 +1,5 @@
+Disponível no repositório: https://github.com/analetisouza/trabalho-pratico-so
+
 * Para compilar os arquivos código-fonte dining_philosophers.c e produtor_consumidor.c:
 
 -- Acesse o diretório em que os arquivos estão localizados pelo terminal
