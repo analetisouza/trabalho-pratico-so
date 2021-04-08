@@ -28,27 +28,28 @@ int state[5];
 int total_eating;
 int total_thinking; 
 
+WINDOW* philosopher_status[5];
+
 void hungry(int n){
     state[n] = HUNGRY;
-    printf("Philosopher %d is hungry\n", n);
 }
 
 void take_chops(int n){
     if (state[n] == HUNGRY && state[LEFT_PHILOSOPHER] != EATING && state[RIGHT_PHILOSOPHER] != EATING){
         if (LEFT_CHOPSTICK < RIGHT_CHOPSTICK){
             sem_wait(&chopstick[LEFT_CHOPSTICK]);
-            printf("Philosopher %d took left chopstick\n", n);
+            //printf("Philosopher %d took left chopstick\n", n);
             sleep(1);
             sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-            printf("Philosopher %d took right chopstick\n", n);
+            //printf("Philosopher %d took right chopstick\n", n);
         }
         else {
             sem_wait(&mutex);
             sem_wait(&chopstick[LEFT_CHOPSTICK]);
-            printf("Philosopher %d took left chopstick\n", n);
+            //printf("Philosopher %d took left chopstick\n", n);
             sleep(1);
             sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-            printf("Philosopher %d took right chopstick\n", n);
+            //printf("Philosopher %d took right chopstick\n", n);
         }
     }
 }
@@ -57,10 +58,9 @@ void eat(int n, int* eating){
     int check_eating = *eating;
     if (check_eating > 0){
         state[n] = EATING;
-        printf("Philosopher %d is eating\n", n);
         sleep(1);
         *eating = *eating - 1;
-        printf("Philosopher %d remaining eating time: %d\n", n, check_eating - 1);
+        //printf("Philosopher %d remaining eating time: %d\n", n, check_eating - 1);
     }
 }
 
@@ -74,29 +74,47 @@ void think(int n, int* thinking){
     int check_thinking = *thinking;
     if (check_thinking > 0){
         state[n] = THINKING;
-        printf("Philosopher %d is thinking\n", n);
         sleep(1);
         *thinking = *thinking - 1;
-        printf("Philosopher %d remaining thinking time: %d\n", n, check_thinking - 1);
+        //printf("Philosopher %d remaining thinking time: %d\n", n, check_thinking - 1);
     } 
 }
 
-void update_status() {
+void update_status(int n) {
+    wclear(philosopher_status[n]);
+    move(n, 0);
 
+    if (state[n] == HUNGRY){
+        wprintw(philosopher_status[n], "Philosopher %d is hungry", n);
+        wrefresh(philosopher_status[n]);
+    }
+    else if (state[n] == EATING){
+        wprintw(philosopher_status[n], "Philosopher %d is eating", n);
+        wrefresh(philosopher_status[n]);
+    }
+    else if (state[n] == THINKING){
+        wprintw(philosopher_status[n], "Philosopher %d is thinking", n);
+        wrefresh(philosopher_status[n]);
+    }
 }
 
 void* philosopher_actions(void* n){
     int local_eating = total_eating;
     int local_thinking = total_thinking;
+    int* i = n;
+    int index = (int)i;
+
+    philosopher_status[index] = newwin(1, 50, index, 0); //change 50 to total sting lengh or terminal lengh
 
     while(local_eating > 0 || local_thinking > 0){
-        int* i = n;
-
-        hungry(i);
-        take_chops(i);
-        eat(i, &local_eating);
-        put_chops(i);
-        think(i, &local_thinking);
+        hungry(index);
+        update_status(index);
+        take_chops(index);
+        eat(index, &local_eating);
+        update_status(index);
+        put_chops(index);
+        think(index, &local_thinking);
+        update_status(index);
     }
     pthread_exit(NULL);
 }
@@ -121,7 +139,7 @@ int main (void){
 
     // initiating philosophers
     for (int i = 0; i < 5; i++){
-        pthread_create(&philosopher[i], NULL, philosopher_actions, (void*)i);
+        pthread_create(&philosopher[i], NULL, philosopher_actions, (void *)i);
         state[i] = THINKING;
     }
     // joining philosophers threads
