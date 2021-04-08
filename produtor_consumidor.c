@@ -81,8 +81,6 @@ void* produz(void* n)
 		printf("\n\n-------------------------------------------------------------\n\n");
 		sleep(2);
 	}
-
-	pthread_exit(NULL);
 }
 
 
@@ -112,8 +110,6 @@ void* consome(void* n)
 		printf("\n\n-------------------------------------------------------------\n\n");
 		sleep(2);
 	}
-
-	pthread_exit(NULL);
 }
 
 
