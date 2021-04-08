@@ -10,6 +10,7 @@ Assumptions about the problem:
 
 #include <stdio.h>
 #include <unistd.h>
+#include <ncurses.h>
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -50,7 +51,7 @@ void take_chops(int n){
             printf("Philosopher %d took right chopstick\n", n);
         }
     }
-} //add busy chopsticks mechanism
+}
 
 void eat(int n, int* eating){
     int check_eating = *eating;
@@ -66,7 +67,7 @@ void eat(int n, int* eating){
 void put_chops(int n){
     sem_post(&chopstick[RIGHT_CHOPSTICK]);
     sem_post(&chopstick[LEFT_CHOPSTICK]);
-    sem_post(&mutex); //not sure if this should be here
+    sem_post(&mutex);
 }
 
 void think(int n, int* thinking){
@@ -78,6 +79,10 @@ void think(int n, int* thinking){
         *thinking = *thinking - 1;
         printf("Philosopher %d remaining thinking time: %d\n", n, check_thinking - 1);
     } 
+}
+
+void update_status() {
+
 }
 
 void* philosopher_actions(void* n){
@@ -99,10 +104,16 @@ void* philosopher_actions(void* n){
 int main (void){
     pthread_t philosopher[5];
 
-    printf("Type the amount of time each philosopher will spend eating: ");
-    scanf("%d", &total_eating);
-    printf("Type the amount of time each philosopher will spend thinking: ");
-    scanf("%d", &total_thinking);
+    initscr();
+    printw("Type the amount of time each philosopher will spend eating: ");
+    refresh();
+    scanw("%d", &total_eating);
+    clear();
+    printw("Type the amount of time each philosopher will spend thinking: ");
+    refresh();
+    scanw("%d", &total_thinking);
+    clear();
+    refresh();
 
     // initiating chopsticks
     for(int i = 0; i < 5; i++)
@@ -116,5 +127,7 @@ int main (void){
     // joining philosophers threads
     for(int i = 0; i < 5; i++)
         pthread_join(philosopher[i], NULL);
+
+    endwin();
     return 0;
 }
