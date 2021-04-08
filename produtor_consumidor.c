@@ -13,6 +13,7 @@ Alunas: Ana Letícia Souza e Rita Chen
 void* produz(void* n);
 void* consome(void* n);
 void imprime_buffer(void);
+void imprime_fila(void);
 
 //threads do produtor (thread[0]) e do consumidor (thread[1])
 pthread_t thread[2];
@@ -77,6 +78,7 @@ void* produz(void* n)
 			qntd_itens++;
 
 			imprime_buffer();
+			imprime_fila();
 
 			sem_post(&mutex); //a thread do produtor sai da região crítica, mutex = 1
 			sem_post(&full); //incrementa em 1 o semáforo de posições ocupadas do buffer
@@ -105,6 +107,7 @@ void* consome(void* n)
 			qntd_itens--;
 
 			imprime_buffer();
+			imprime_fila();
 
 			sem_post(&mutex); //a thread do consumidor sai dentro da região crítica, mutex = 1
 			sem_post(&empty); //incrementa em 1 o semáforo de posições vazias do buffer
@@ -121,6 +124,17 @@ void imprime_buffer(void)
 	int i;
 
 	printf("\n\tBuffer: ");
+	for(i = 0; i < tam_buffer; i++) {
+		printf("%d   ", buffer[i]);
+	}
+	printf("\n");
+}
+
+void imprime_fila(void)
+{
+	int i;
+
+	printf("\n\tFila: ");
 	for(i = 0; i < qntd_itens; i++) {
 		printf("%d   ", buffer[(out + i) % tam_buffer]);
 	}
