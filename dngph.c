@@ -31,22 +31,15 @@ int total_eating;
 int total_thinking; 
 
 void print_status(){
-    int local_state[5];
-
-    sem_wait(&print);
-    for(int i = 0; i < 5; i++)
-        local_state[i] = state[i];
-    sem_post(&print);
-
     printf("\n");
     for(int i = 0; i < 5; i++){
-        if (local_state[i] == HUNGRY){
+        if (state[i] == HUNGRY){
             printf("Philosopher %d is hungry\n", i);
         }
-        else if (local_state[i] == EATING){
+        else if (state[i] == EATING){
             printf("Philosopher %d is eating\n", i);
         }
-        else if (local_state[i] == THINKING){
+        else if (state[i] == THINKING){
             printf("Philosopher %d is thinking\n", i);
         }
     }
@@ -61,21 +54,21 @@ void take_chops(int n){
     if (state[n] == HUNGRY && state[LEFT_PHILOSOPHER] != EATING && state[RIGHT_PHILOSOPHER] != EATING){
         if (LEFT_CHOPSTICK < RIGHT_CHOPSTICK){
             sem_wait(&chopstick[LEFT_CHOPSTICK]);
-            //printf("Philosopher %d took left chopstick\n", n);
+            printf("Philosopher %d took left chopstick\n", n);
             sleep(1);
             sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-            //printf("Philosopher %d took right chopstick\n", n);
+            printf("Philosopher %d took right chopstick\n", n);
         }
         else {
             sem_wait(&mutex);
                 sem_wait(&chopstick[LEFT_CHOPSTICK]);
-                //printf("Philosopher %d took left chopstick\n", n);
+                printf("Philosopher %d took left chopstick\n", n);
                 sleep(1);
                 sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-                //printf("Philosopher %d took right chopstick\n", n);
+                printf("Philosopher %d took right chopstick\n", n);
         }
     }
-} //add busy chopsticks mechanism
+}
 
 void eat(int n, int* eating){
     int check_eating = *eating;
@@ -108,10 +101,10 @@ void think(int n, int* thinking){
 void* philosopher_actions(void* n){
     int local_eating = total_eating;
     int local_thinking = total_thinking;
+    int* aux = n;
+    int i = (int)aux;
 
     while(local_eating > 0 || local_thinking > 0){
-        int* i = n;
-
         hungry(i);
         take_chops(i);
         eat(i, &local_eating);
