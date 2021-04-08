@@ -1,5 +1,6 @@
 /*
 Implementação do problema do Produtor e Consumidor com o uso de semáforos
+*utilizando vetor circular
 Alunas: Ana Letícia Souza e Rita Chen
 */
 
@@ -9,39 +10,35 @@ Alunas: Ana Letícia Souza e Rita Chen
 #include <pthread.h>
 #include <semaphore.h>
 
-void imprime(void);
 void* produz(void* n);
 void* consome(void* n);
-int num_random(int min, int max);
+void imprime_buffer(void);
 
-//threads do produtor (thread[0]) e consumidor (thread[1])
+//threads do produtor (thread[0]) e do consumidor (thread[1])
 pthread_t thread[2];
 
 //semáforos
-sem_t mutex; //semáforo binário que controla se alguma thread está acessando a região crítica (exclusão mutua)
-sem_t full; //semáforo que indica quantos espaços do buffer estão ocupados
-sem_t empty; //semáforo que indica quantos espaços do buffer estão vazios
+sem_t mutex; //semáforo binário que controla se alguma thread está acessando a região crítica
+sem_t full; //semáforo contador que indica quantos espaços do buffer estão ocupados
+sem_t empty; //semáforo contador que indica quantos espaços do buffer estão vazios
 
 //dados coletados na entrada (são dados constantes depois de declarados)
 int tam_buffer; //tamanho do buffer
 int itens_prod; //quantidade de itens produzidos pelo produtor de uma única vez
 int itens_cons; //quantidade de itens consumidos pelo consumidor de uma única vez
-int contador = 0;
+int ind_prod = 0, ind_cons = 0, qntd_itens = 0; //indices de onde vão realizar a produção e a consumação e o contador de itens no buffer
 
-//região crítica (recursos compartilhados entre as threads)
+//região crítica (recursos compartilhados entre as threads do produtor e consumidor)
 int* buffer; //vetor do buffer
 
-int main(void) {
+int main(int argc, char* argv[]) {
 	int i;
 
-	//pega os dados da entrada
-	printf("Informe o tamanho do buffer: ");
-	scanf("%d", &tam_buffer);
-	printf("Informe a quantidade de itens produzidos pelo produtor de uma única vez: ");
-	scanf("%d", &itens_prod);
-	printf("Informe a quantidade de itens consumidos pelo consumidor de uma única vez: ");
-	scanf("%d", &itens_cons);
-	
+	//pega os dados da linha de comando e atribui nas variáveis
+	tam_buffer = atoi(argv[1]);
+	itens_prod = atoi(argv[2]);
+	itens_cons = atoi(argv[3]);
+
 	//aloca o buffer com o tamanho dado
 	buffer = (int*)malloc(tam_buffer*sizeof(int));
 
@@ -50,7 +47,7 @@ int main(void) {
 	sem_init(&full, 0, 0); //indica quantas posições estão ocupadas, inicializada com 0
 	sem_init(&empty, 0, tam_buffer);//indica quantas posições estão livres, inicializada com o tamanho do buffer
 
-	//criando e inicializando as threads do produtor na pos. 0 e consumidor na pos. 1
+	//criando e inicializando as threads do produtor na pos. 0 e consumidor na pos. 1 do vetor thread
 	pthread_create(&thread[0], NULL, produz, NULL);
 	pthread_create(&thread[1], NULL, consome, NULL);
 
@@ -62,79 +59,71 @@ int main(void) {
 
 void* produz(void* n)
 {
-/*
-	sem_wait é equivalente a operação de DOWN: 
-- decrementa os valores dos semáforos empty e mutex em 1 quando seus valores são > 0, 
-para permitir a produção de um item dentro da região crítica, garantindo a exclusão mútua.
-
-	sem_post é equivalente a operação de UP:
-- incrementa os valores dos semáforos mutex e full em 1 após a utilização da região crítica pelo produtor, 
-liberando assim o uso do buffer para a thread do consumidor que está esperando, acordando esta thread.
-*/
 	int i;
+
 	while(1){
-		sem_wait(&empty);
-		sem_wait(&mutex);
-		printf("\n\t    EMPTY E MUTEX > 0 => PRODUÇÃO!\n");
+		for(i = 0; i < itens_prod; i++) {
+			//vai produzir quando empty e mutex > 0:
+			sem_wait(&empty); //decrementa em 1 o semáforo de posições vazias do buffer
+			sem_wait(&mutex); //a thread do produtor está dentro da região crítica, mutex = 0
 
-		buffer[contador] = num_random(1,10);
-		printf("Produzi o buffer[%d] = %d\n",contador, buffer[contador]);
-		contador = (contador + 1) % tam_buffer;
-		printf("Contador atual: %d\n", contador);
-		printf("Saí da RC\n");
+			//produz o item com id entre 1 a 99 e o coloca dentro do buffer
+			buffer[ind_prod] = (rand()%99 + 1);
+			printf("\n\t\t* %dº PRODUÇÃO DO ID %d!\n", i+1, buffer[ind_prod]);
+			ind_prod = (ind_prod + 1) % tam_buffer;
+			qntd_itens++;
 
-		sem_post(&mutex);
-		sem_post(&full);
+			imprime_buffer();
 
-		imprime();
-		sleep(1);
+			sem_post(&mutex); //a thread do produtor sai da região crítica, mutex = 1
+			sem_post(&full); //incrementa em 1 o semáforo de posições ocupadas do buffer
+		}
+		printf("\n\n-------------------------------------------------------------\n\n");
+		sleep(2);
 	}
+
+	pthread_exit(NULL);
 }
 
 
 void* consome(void* n)
 {
-/*
-	sem_wait é equivalente a operação de DOWN: 
-- decrementa os valores dos semáforos full e mutex em 1 quando seus valores são > 0, 
-para permitir o consumo de um item dentro da região crítica, garantindo a exclusão mútua.
+	int i;
 
-	sem_post é equivalente a operação de UP:
-- incrementa os valores dos semáforos mutex e empty em 1 após a utilização da região crítica pelo consumidor, 
-liberando assim o uso do buffer para a thread do produtor que está esperando, acordando esta thread.
-*/
 	while(1){
-		sem_wait(&full);
-		sem_wait(&mutex);
-		printf("\n\t    FULL E MUTEX > 0 => CONSUMO!\n");
+		for(i = 0; i < itens_cons; i++) {
+			//vai consumir quando full e mutex > 0:
+			sem_wait(&full); //decrementa em 1 o semáforo de posições ocupadas do buffer
+			sem_wait(&mutex); //a thread do consumidor está dentro da região crítica, mutex = 0
 
-		int item = buffer[--contador];
-		printf("Consumi o item da posição[%d] = %d\n",contador, buffer[contador]);
-		buffer[contador] = -1;
-		printf("Contador atual: %d\n", contador);
-		printf("Saí da RC\n");
+			//consome o item do mais antigo para o mais recente, considerando o vetor circular
+			//int item = buffer[ind_cons];
+			printf("\n\t\t* %dº CONSUMO DO ID %d!\n", i+1, buffer[ind_cons]);
+			buffer[ind_cons] = 0;
+			ind_cons = (ind_cons + 1) % tam_buffer;
+			qntd_itens--;
 
-		sem_post(&mutex);
-		sem_post(&empty);
+			imprime_buffer();
 
-		imprime();
-		sleep(1);
+			sem_post(&mutex); //a thread do consumidor sai dentro da região crítica, mutex = 1
+			sem_post(&empty); //incrementa em 1 o semáforo de posições vazias do buffer
+
+		}
+		printf("\n\n-------------------------------------------------------------\n\n");
+		sleep(2);
 	}
+
+	pthread_exit(NULL);
 }
 
 
-void imprime(void)
+void imprime_buffer(void)
 {
 	int i;
 
-	printf("\n\t    Informações:\n\tQntd de elementos = %d\n\tBuffer: ", contador);
-	for(i = 0; i < tam_buffer; i++) {
-		printf("%d   ", buffer[i]);
+	printf("\n\tBuffer: ");
+	for(i = 0; i < qntd_itens; i++) {
+		printf("%d   ", buffer[(ind_cons + i) % tam_buffer]);
 	}
-	printf("\n----------------------------------------\n");
-	//system("clear || cls");
-}
-
-int num_random(int min, int max){
-   return min + rand() / (RAND_MAX / (max - min + 1) + 1);
+	printf("\n");
 }
