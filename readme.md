@@ -1,4 +1,5 @@
 Desenvolvido pelas alunas Ana Letícia Souza e Rita Zhen Chen para a disciplina de Sistemas Operacionais do curso de Ciência da Computação da Universidade Federal Rural do Rio de Janeiro
+
 Disponível no repositório: https://github.com/analetisouza/trabalho-pratico-so
 
 ## Para compilar os arquivos código-fonte dining_philosophers.c, produtor_consumidor.c e experimental_dining_philosophers.c:
