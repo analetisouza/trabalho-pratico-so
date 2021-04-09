@@ -28,9 +28,10 @@ sem_t mutex;
 sem_t print;
 int state[5];
 int total_eating;
-int total_thinking; 
+int total_thinking;
 
 void print_status(){
+    sem_wait(&print);
     printf("\n");
     for(int i = 0; i < 5; i++){
         if (state[i] == HUNGRY){
@@ -44,6 +45,7 @@ void print_status(){
         }
     }
     printf("\n");
+    sem_post(&print);
 }
 
 void hungry(int n){
@@ -51,23 +53,14 @@ void hungry(int n){
 }
 
 void take_chops(int n){
+    sem_wait(&mutex);
     if (state[n] == HUNGRY && state[LEFT_PHILOSOPHER] != EATING && state[RIGHT_PHILOSOPHER] != EATING){
-        if (LEFT_CHOPSTICK < RIGHT_CHOPSTICK){
-            sem_wait(&chopstick[LEFT_CHOPSTICK]);
-            printf("Philosopher %d took left chopstick (Nº %d)\n", n, LEFT_CHOPSTICK);
-            sleep(1);
-            sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-            printf("Philosopher %d took right chopstick (Nº %d)\n", n, RIGHT_CHOPSTICK);
-        }
-        else {
-            sem_wait(&mutex);
-                sem_wait(&chopstick[LEFT_CHOPSTICK]);
-                printf("Philosopher %d took left chopstick (Nº %d)\n", n, LEFT_CHOPSTICK);
-                sleep(1);
-                sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-                printf("Philosopher %d took right chopstick (Nº %d)\n", n, RIGHT_CHOPSTICK);
-        }
-    }
+        sem_wait(&chopstick[LEFT_CHOPSTICK]);
+        printf("Philosopher %d took left chopstick (Nº %d)\n", n, LEFT_CHOPSTICK);
+        sleep(1);
+        sem_wait(&chopstick[RIGHT_CHOPSTICK]);
+        printf("Philosopher %d took right chopstick (Nº %d)\n", n, RIGHT_CHOPSTICK);
+    } 
 }
 
 void eat(int n, int* eating){
@@ -125,6 +118,9 @@ int main (void){
     // initiating chopsticks
     for(int i = 0; i < 5; i++)
         sem_init(&chopstick[i], 0, 1);
+
+    sem_init(&mutex, 0, 1);
+    sem_init(&print, 0, 1);
 
     // initiating philosophers
     for (int i = 0; i < 5; i++){
