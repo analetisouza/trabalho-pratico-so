@@ -1,76 +1,69 @@
 /*
-
 Assumptions about the problem:
-
+- Philosophers have one chopstick each
 - Philosophers start the dinner hungry
 - Philosophers spend a total time eating and a total time thinking
+- Philosophers can think at the same time
 - The dinner ends when they finish eating and thinking
+
+Issues found:
+- Consecutive philosophers eating at the same time
 
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <ncurses.h>
 #include <pthread.h>
 #include <semaphore.h>
 
 #define THINKING 0
 #define HUNGRY 1
 #define EATING 2
-#define LEFT_PHILOSOPHER (n + 4) % 5
-#define RIGHT_PHILOSOPHER (n + 1) % 5
+#define LEFT_PHILOSOPHER (n + (total_philosophers - 1)) % total_philosophers
+#define RIGHT_PHILOSOPHER (n + 1) % total_philosophers
 #define LEFT_CHOPSTICK n
-#define RIGHT_CHOPSTICK (n + 1) % 5
+#define RIGHT_CHOPSTICK (n + 1) % total_philosophers
 
-pthread_t philosopher[5];
-sem_t chopstick[5];
+pthread_t* philosopher;
+sem_t* chopstick;
 sem_t mutex;
-int state[5];
+sem_t print;
+int* state;
+int total_philosophers;
 int total_eating;
-int total_thinking; 
+int total_thinking;
 
-WINDOW* philosopher_status[5];
-
-void update_status(int n) {
-    wclear(philosopher_status[n]);
-    move(n, 0);
-
-    if (state[n] == HUNGRY){
-        wprintw(philosopher_status[n], "Philosopher %d is hungry", n);
-        wrefresh(philosopher_status[n]);
+void print_status(){
+    sem_wait(&print);
+    printf("\n");
+    for(int i = 0; i < total_philosophers; i++){
+        if (state[i] == HUNGRY){
+            printf("Philosopher %d is hungry\n", i);
+        }
+        else if (state[i] == EATING){
+            printf("Philosopher %d is eating\n", i);
+        }
+        else if (state[i] == THINKING){
+            printf("Philosopher %d is thinking\n", i);
+        }
     }
-    else if (state[n] == EATING){
-        wprintw(philosopher_status[n], "Philosopher %d is eating", n);
-        wrefresh(philosopher_status[n]);
-    }
-    else if (state[n] == THINKING){
-        wprintw(philosopher_status[n], "Philosopher %d is thinking", n);
-        wrefresh(philosopher_status[n]);
-    }
+    printf("\n");
+    sem_post(&print);
 }
 
 void hungry(int n){
     state[n] = HUNGRY;
-    update_status(n);
 }
 
 void take_chops(int n){
+    sem_wait(&mutex);
     if (state[n] == HUNGRY && state[LEFT_PHILOSOPHER] != EATING && state[RIGHT_PHILOSOPHER] != EATING){
-        if (LEFT_CHOPSTICK < RIGHT_CHOPSTICK){
-            sem_wait(&chopstick[LEFT_CHOPSTICK]);
-            //printf("Philosopher %d took left chopstick\n", n);
-            sleep(1);
-            sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-            //printf("Philosopher %d took right chopstick\n", n);
-        }
-        else {
-            sem_wait(&mutex);
-            sem_wait(&chopstick[LEFT_CHOPSTICK]);
-            //printf("Philosopher %d took left chopstick\n", n);
-            sleep(1);
-            sem_wait(&chopstick[RIGHT_CHOPSTICK]);
-            //printf("Philosopher %d took right chopstick\n", n);
-        }
+        sem_wait(&chopstick[LEFT_CHOPSTICK]);
+        printf("Philosopher %d took left chopstick (Nº %d)\n", n, LEFT_CHOPSTICK);
+        sleep(1);
+        sem_wait(&chopstick[RIGHT_CHOPSTICK]);
+        printf("Philosopher %d took right chopstick (Nº %d)\n", n, RIGHT_CHOPSTICK);
     }
 }
 
@@ -78,10 +71,10 @@ void eat(int n, int* eating){
     int check_eating = *eating;
     if (check_eating > 0){
         state[n] = EATING;
-        update_status(n);
+        print_status();
         sleep(1);
         *eating = *eating - 1;
-        //printf("Philosopher %d remaining eating time: %d\n", n, check_eating - 1);
+        printf("Philosopher %d remaining eating time: %d\n", n, check_eating - 1);
     }
 }
 
@@ -95,55 +88,57 @@ void think(int n, int* thinking){
     int check_thinking = *thinking;
     if (check_thinking > 0){
         state[n] = THINKING;
-        update_status(n);
+        print_status();
         sleep(1);
         *thinking = *thinking - 1;
-        //printf("Philosopher %d remaining thinking time: %d\n", n, check_thinking - 1);
+        printf("Philosopher %d remaining thinking time: %d\n", n, check_thinking - 1);
     } 
 }
 
 void* philosopher_actions(void* n){
     int local_eating = total_eating;
     int local_thinking = total_thinking;
-    int* i = n;
-    int index = (int)i;
-
-    philosopher_status[index] = newwin(1, 50, index, 0); //change 50 to total string length
+    int* aux = n;
+    int i = (int)aux;
 
     while(local_eating > 0 || local_thinking > 0){
-        hungry(index);
-        take_chops(index);
-        eat(index, &local_eating);
-        put_chops(index);
-        think(index, &local_thinking);
+        hungry(i);
+        take_chops(i);
+        eat(i, &local_eating);
+        put_chops(i);
+        think(i, &local_thinking);
     }
     pthread_exit(NULL);
 }
 
 int main (void){
-    initscr();
-    printw("Type the amount of time each philosopher will spend eating: ");
-    refresh();
-    scanw("%d", &total_eating);
-    clear();
-    printw("Type the amount of time each philosopher will spend thinking: ");
-    refresh();
-    scanw("%d", &total_thinking);
-    clear();
-    refresh();
+    printf("Type the amount of philosophers joining the dinner: ");
+    scanf("%d", &total_philosophers);
+    printf("Type the amount of time each philosopher will spend eating: ");
+    scanf("%d", &total_eating);
+    printf("Type the amount of time each philosopher will spend thinking: ");
+    scanf("%d", &total_thinking);
 
-    for(int i = 0; i < 5; i++)
+    philosopher = malloc(total_philosophers * sizeof(pthread_t));
+    chopstick = malloc(total_philosophers * sizeof(sem_t));
+    state = malloc(total_philosophers * sizeof(int));
+
+    for(int i = 0; i < total_philosophers; i++)
         sem_init(&chopstick[i], 0, 1);
 
+    sem_init(&mutex, 0, 1);
+    sem_init(&print, 0, 1);
 
-    for (int i = 0; i < 5; i++){
-        pthread_create(&philosopher[i], NULL, philosopher_actions, (void *)i);
+    for (int i = 0; i < total_philosophers; i++){
+        pthread_create(&philosopher[i], NULL, philosopher_actions, (void*)i);
         state[i] = THINKING;
     }
 
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < total_philosophers; i++)
         pthread_join(philosopher[i], NULL);
 
-    endwin();
+    free(state);
+    free(chopstick);
+    free(philosopher);
     return 0;
 }
