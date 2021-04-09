@@ -1,3 +1,4 @@
+Desenvolvido pelas alunas Ana Letícia Souza e Rita Zhen Chen para a disciplina de Sistemas Operacionais do curso de Ciência da Computação da Universidade Federal Rural do Rio de Janeiro
 Disponível no repositório: https://github.com/analetisouza/trabalho-pratico-so
 
 ## Para compilar os arquivos código-fonte dining_philosophers.c, produtor_consumidor.c e experimental_dining_philosophers.c:
@@ -28,7 +29,7 @@ Disponível no repositório: https://github.com/analetisouza/trabalho-pratico-so
 - ex: ./edp
 
 
-### Atenção, existem duas versões do problema do jantar dos filósofos
+### Existem duas versões do problema do jantar dos filósofos
 
 - Na primeira versão (dining_philosophers.c), as instruções do problema foram levadas a risca, então os filósofos usam seu todo o tempo comendo e pensando de uma vez.
 
