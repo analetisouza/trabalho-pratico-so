@@ -1,5 +1,6 @@
 /*
 Assumptions about the problem:
+- Philosophers have one chopstick each
 - Philosophers start the dinner hungry
 - Philosophers spend a total time eating and a total time thinking
 - Philosophers can think at the same time
@@ -11,6 +12,7 @@ Issues found:
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
@@ -18,22 +20,24 @@ Issues found:
 #define THINKING 0
 #define HUNGRY 1
 #define EATING 2
-#define LEFT_PHILOSOPHER (n + 4) % 5
-#define RIGHT_PHILOSOPHER (n + 1) % 5
+#define LEFT_PHILOSOPHER (n + (total_philosophers - 1)) % total_philosophers
+#define RIGHT_PHILOSOPHER (n + 1) % total_philosophers
 #define LEFT_CHOPSTICK n
-#define RIGHT_CHOPSTICK (n + 1) % 5
+#define RIGHT_CHOPSTICK (n + 1) % total_philosophers
 
-sem_t chopstick[5];
+pthread_t* philosopher;
+sem_t* chopstick;
 sem_t mutex;
 sem_t print;
-int state[5];
+int* state;
+int total_philosophers;
 int total_eating;
 int total_thinking;
 
 void print_status(){
     sem_wait(&print);
     printf("\n");
-    for(int i = 0; i < 5; i++){
+    for(int i = 0; i < total_philosophers; i++){
         if (state[i] == HUNGRY){
             printf("Philosopher %d is hungry\n", i);
         }
@@ -60,7 +64,7 @@ void take_chops(int n){
         sleep(1);
         sem_wait(&chopstick[RIGHT_CHOPSTICK]);
         printf("Philosopher %d took right chopstick (Nº %d)\n", n, RIGHT_CHOPSTICK);
-    } 
+    }
 }
 
 void eat(int n, int* eating){
@@ -108,27 +112,33 @@ void* philosopher_actions(void* n){
 }
 
 int main (void){
-    pthread_t philosopher[5];
-
+    printf("Type the amount of philosophers joining the dinner: ");
+    scanf("%d", &total_philosophers);
     printf("Type the amount of time each philosopher will spend eating: ");
     scanf("%d", &total_eating);
     printf("Type the amount of time each philosopher will spend thinking: ");
     scanf("%d", &total_thinking);
 
-    // initiating chopsticks
-    for(int i = 0; i < 5; i++)
+    philosopher = malloc(total_philosophers * sizeof(pthread_t));
+    chopstick = malloc(total_philosophers * sizeof(sem_t));
+    state = malloc(total_philosophers * sizeof(int));
+
+    for(int i = 0; i < total_philosophers; i++)
         sem_init(&chopstick[i], 0, 1);
 
     sem_init(&mutex, 0, 1);
     sem_init(&print, 0, 1);
 
-    // initiating philosophers
-    for (int i = 0; i < 5; i++){
+    for (int i = 0; i < total_philosophers; i++){
         pthread_create(&philosopher[i], NULL, philosopher_actions, (void*)i);
         state[i] = THINKING;
     }
-    // joining philosophers threads
-    for(int i = 0; i < 5; i++)
+
+    for(int i = 0; i < total_philosophers; i++)
         pthread_join(philosopher[i], NULL);
+
+    free(state);
+    free(chopstick);
+    free(philosopher);
     return 0;
 }
