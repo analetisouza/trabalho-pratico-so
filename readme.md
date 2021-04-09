@@ -30,6 +30,6 @@ Disponível no repositório: https://github.com/analetisouza/trabalho-pratico-so
 
 ### Atenção, existem duas versões do problema do jantar dos filósofos
 
-- Na primeira versão (dining_philosphers.c), as instruções do problema foram levadas a risca, então os filósofos usam seu todo o tempo comendo e pensando de uma vez.
+- Na primeira versão (dining_philosophers.c), as instruções do problema foram levadas a risca, então os filósofos usam seu todo o tempo comendo e pensando de uma vez.
 
 - Na segunda versão (experimental_dining_philosophers.c), foi considerado um quantum de tempo de 1 segundo, esse tempo é decrescido do total de tempo que eles gastarão comendo e pensando a cada iteração. O programa termina quando ambos os tempos acabam. Essa versão possui alguns problemas de sincronização ainda não solucionados portanto apenas um filósofo come por vez.
