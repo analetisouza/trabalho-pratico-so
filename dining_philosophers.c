@@ -83,8 +83,8 @@ int main(int argc, char* argv[])
     int i;
     // parameters: number of philosophers, time eating, time thinking
     total_philosophers = atoi(argv[1]);
-    time_eating = atoi(argv[2]);
-    time_thinking = atoi(argv[3]);  
+    time_thinking = atoi(argv[2]);  
+    time_eating = atoi(argv[3]);
 
     philosopher = (pthread_t*) malloc(total_philosophers * sizeof(pthread_t*));
     current_philosopher = (int*) malloc(total_philosophers * sizeof(int));
