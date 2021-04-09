@@ -1,7 +1,6 @@
 /*
 Implementação do problema do Produtor e Consumidor com o uso de semáforos
 *utilizando vetor circular
-Alunas: Ana Letícia Souza e Rita Chen
 */
 
 #include <stdio.h>
