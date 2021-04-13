@@ -10,7 +10,6 @@
 
 pthread_t* philosopher; //philosophers threads
 sem_t* chopstick; //chopsticks semaphores
-sem_t mutex_print; //print_status function semaphore
 
 int* state; //verifies if the philosopher is THINKING, HUNGRY or EATING
 int* current_philosopher; //returns the id of the current philosopher
@@ -36,21 +35,19 @@ void thinking(int n){
 }
 
 void print_status(){
-    sem_wait(&mutex_print);
-    printf("---------------------------------------------------\n\t\tSTATUS INFO\n");
+    printf("--------------------------------------\n");
     for(int i = 0; i < total_philosophers; i++){
         if (state[i] == HUNGRY){
-            printf("\t Philosopher %d is hungry\n", i);
+            printf("Philosopher %d is hungry\n", i);
         }
         else if (state[i] == EATING){
-            printf("\t Philosopher %d is eating\n", i);
+            printf("Philosopher %d is eating\n", i);
         }
         else if (state[i] == THINKING){
-            printf("\t Philosopher %d is thinking\n", i);
+            printf("Philosopher %d is thinking\n", i);
         }
     }
-    printf("---------------------------------------------------\n\n");
-    sem_post(&mutex_print);
+    printf("--------------------------------------\n");
 }
 
 void take_chops(int* pos_current_philosopher){
@@ -58,7 +55,6 @@ void take_chops(int* pos_current_philosopher){
     sem_wait(&chopstick[((*pos_current_philosopher) + 1) % total_philosophers]);
     printf("Philosopher %d got the %d chopstick\n", *pos_current_philosopher, *pos_current_philosopher);
     printf("Philosopher %d got the %d chopstick\n", *pos_current_philosopher, ((*pos_current_philosopher) + 1) % total_philosophers);
-    printf("Philosopher %d started eating\n", *pos_current_philosopher);
 }
 
 void put_chops(int* pos_current_philosopher){
@@ -98,8 +94,6 @@ int main(int argc, char* argv[])
     // initiating chopsticks
     for(i = 0; i < total_philosophers; i++)
         sem_init(&chopstick[i], 0, 1);
-    
-    sem_init(&mutex_print, 0, 1);
 
     // initiating philosophers
     for (i = 0; i < total_philosophers; i++){
